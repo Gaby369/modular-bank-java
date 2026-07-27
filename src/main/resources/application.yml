@@ -17,3 +17,9 @@ jwt:
 
 server:
   port: ${SERVER_PORT:8082}
+
+accounts:
+  client:
+    mode: ${ACCOUNTS_CLIENT_MODE:remote}
+    base-url: ${ACCOUNTS_SERVICE_URL:http://localhost:8081}
+    internal-api-key: ${INTERNAL_API_KEY:finbank-internal-dev-key}

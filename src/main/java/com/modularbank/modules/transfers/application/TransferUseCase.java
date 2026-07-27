@@ -40,8 +40,12 @@ public class TransferUseCase {
 
         Money amount = Money.of(request.amount());
 
-        accountsService.debit(request.sourceAccountId(), amount, request.reference());
-        accountsService.credit(request.targetAccountId(), amount, request.reference());
+        accountsService.transfer(
+            request.sourceAccountId(),
+            request.targetAccountId(),
+            amount,
+            request.reference()
+        );
 
         Transfer transfer = Transfer.builder()
             .sourceAccountId(request.sourceAccountId())
