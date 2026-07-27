@@ -22,3 +22,5 @@ accounts:
   service:
     base-url: ${ACCOUNTS_SERVICE_URL:http://localhost:8081}
     internal-api-key: ${INTERNAL_API_KEY:finbank-internal-dev-key}
+jwt:
+  secret: ${JWT_SECRET:modular-bank-dev-secret-change-in-production-256bit}
