@@ -1,4 +1,22 @@
 services:
+  transfers-postgres:
+    image: postgres:16
+    container_name: transfers-postgres
+    environment:
+      POSTGRES_DB: transfers_db
+      POSTGRES_USER: transfers
+      POSTGRES_PASSWORD: transfers
+    ports:
+      - "5434:5432"
+    volumes:
+      - transfers_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U transfers -d transfers_db
+      interval: 5s
+      timeout: 5s
+      retries: 10
   postgres:
     image: postgres:16
     environment:
@@ -33,3 +51,4 @@ services:
 volumes:
   postgres_data:
   accounts_postgres_data:
+  transfers_postgres_data:

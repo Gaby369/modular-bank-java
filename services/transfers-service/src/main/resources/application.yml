@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: transfers-service
+
+  datasource:
+    url: ${TRANSFERS_DB_URL:jdbc:postgresql://localhost:5434/transfers_db}
+    username: ${TRANSFERS_DB_USER:transfers}
+    password: ${TRANSFERS_DB_PASSWORD:transfers}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  flyway:
+    enabled: true
+
+server:
+  port: 8083
