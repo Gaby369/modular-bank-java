@@ -17,3 +17,8 @@ spring:
 
 server:
   port: 8083
+
+accounts:
+  service:
+    base-url: ${ACCOUNTS_SERVICE_URL:http://localhost:8081}
+    internal-api-key: ${INTERNAL_API_KEY:finbank-internal-dev-key}
