@@ -16,13 +16,14 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
+    private final InternalApiKeyFilter internalApiKeyFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(
         HttpSecurity http
     ) throws Exception {
 
-        return http
+        http
             .csrf(AbstractHttpConfigurer::disable)
             .httpBasic(AbstractHttpConfigurer::disable)
             .formLogin(AbstractHttpConfigurer::disable)
@@ -38,11 +39,20 @@ public class SecurityConfig {
                 exception.authenticationEntryPoint(
                     new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)
                 )
-            )
-            .addFilterBefore(
-                jwtAuthFilter,
-                UsernamePasswordAuthenticationFilter.class
-            )
-            .build();
+            );
+
+        // Primero se registra JwtAuthFilter dentro de la cadena.
+        http.addFilterBefore(
+            jwtAuthFilter,
+            UsernamePasswordAuthenticationFilter.class
+        );
+
+        // Después Spring ya puede colocar este filtro antes del JWT.
+        http.addFilterBefore(
+            internalApiKeyFilter,
+            JwtAuthFilter.class
+        );
+
+        return http.build();
     }
 }

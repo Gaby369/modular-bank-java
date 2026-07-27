@@ -60,6 +60,61 @@ public class AccountsServiceImpl implements AccountsService {
         }
     }
 
+@Override
+@Transactional
+public void transfer(
+    UUID sourceAccountId,
+    UUID targetAccountId,
+    Money amount,
+    String reference
+) {
+    if (sourceAccountId.equals(targetAccountId)) {
+        throw new ResponseStatusException(
+            HttpStatus.UNPROCESSABLE_ENTITY,
+            "Source and target accounts must be different"
+        );
+    }
+
+    if (!accountRepository.existsById(sourceAccountId)) {
+        throw new ResponseStatusException(
+            HttpStatus.NOT_FOUND,
+            "Source account not found"
+        );
+    }
+
+    if (!accountRepository.existsById(targetAccountId)) {
+        throw new ResponseStatusException(
+            HttpStatus.NOT_FOUND,
+            "Target account not found"
+        );
+    }
+
+    int debited = accountRepository.debitIfSufficient(
+        sourceAccountId,
+        amount.amount()
+    );
+
+    if (debited == 0) {
+        throw new ResponseStatusException(
+            HttpStatus.UNPROCESSABLE_ENTITY,
+            "Insufficient funds"
+        );
+    }
+
+    int credited = accountRepository.credit(
+        targetAccountId,
+        amount.amount()
+    );
+
+    if (credited == 0) {
+        throw new ResponseStatusException(
+            HttpStatus.NOT_FOUND,
+            "Target account not found"
+        );
+    }
+}
+
+
     @Override
     @Transactional(readOnly = true)
     public List<AccountSummary> findByOwner(UUID userId) {
