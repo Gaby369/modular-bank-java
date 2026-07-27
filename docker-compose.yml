@@ -48,7 +48,29 @@ services:
     volumes:
       - accounts_postgres_data:/var/lib/postgresql/data
 
+  rabbitmq:
+    image: rabbitmq:4.2-management
+    container_name: modular-bank-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: finbank
+      RABBITMQ_DEFAULT_PASS: finbank
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test:
+        - CMD
+        - rabbitmq-diagnostics
+        - -q
+        - ping
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
 volumes:
   postgres_data:
   accounts_postgres_data:
   transfers_postgres_data:
+  rabbitmq_data:
