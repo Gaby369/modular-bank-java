@@ -1,15 +1,22 @@
 package com.modularbank.transfers.application;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.modularbank.transfers.application.dto.TransferRequest;
 import com.modularbank.transfers.application.ports.AccountsClient;
 import com.modularbank.transfers.domain.Transfer;
 import com.modularbank.transfers.infrastructure.TransferRepository;
+import com.modularbank.transfers.infrastructure.messaging.TransferMessagingConstants;
+import com.modularbank.transfers.infrastructure.messaging.events.TransferRequestedEvent;
+import com.modularbank.transfers.infrastructure.outbox.OutboxEvent;
+import com.modularbank.transfers.infrastructure.outbox.OutboxEventRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -17,9 +24,15 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TransferUseCase {
 
+    private static final String AGGREGATE_TYPE = "Transfer";
+    private static final String EVENT_TYPE = "TransferRequested.v1";
+
     private final TransferRepository transferRepository;
     private final AccountsClient accountsClient;
+    private final OutboxEventRepository outboxEventRepository;
+    private final ObjectMapper objectMapper;
 
+    @Transactional
     public Transfer execute(
         UUID userId,
         TransferRequest request
@@ -56,22 +69,36 @@ public class TransferUseCase {
 
         transfer = transferRepository.save(transfer);
 
-        try {
-            accountsClient.transfer(
+        UUID eventId = UUID.randomUUID();
+
+        TransferRequestedEvent event =
+            new TransferRequestedEvent(
+                eventId,
+                transfer.getId(),
+                userId,
                 request.sourceAccountId(),
                 request.targetAccountId(),
                 request.amount(),
-                request.reference()
+                request.reference(),
+                Instant.now(),
+                TransferRequestedEvent.CURRENT_VERSION
             );
 
-            transfer.setStatus("COMPLETED");
-            return transferRepository.save(transfer);
+        String payload = serializeEvent(event);
 
-        } catch (RuntimeException exception) {
-            transfer.setStatus("FAILED");
-            transferRepository.save(transfer);
-            throw exception;
-        }
+        OutboxEvent outboxEvent =
+            OutboxEvent.pending(
+                eventId,
+                AGGREGATE_TYPE,
+                transfer.getId(),
+                EVENT_TYPE,
+                TransferMessagingConstants.REQUESTED_ROUTING_KEY,
+                payload
+            );
+
+        outboxEventRepository.save(outboxEvent);
+
+        return transfer;
     }
 
     @Transactional(readOnly = true)
@@ -97,5 +124,19 @@ public class TransferUseCase {
                 accountId,
                 accountId
             );
+    }
+
+    private String serializeEvent(
+        TransferRequestedEvent event
+    ) {
+        try {
+            return objectMapper.writeValueAsString(event);
+
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException(
+                "Could not serialize TransferRequestedEvent",
+                exception
+            );
+        }
     }
 }

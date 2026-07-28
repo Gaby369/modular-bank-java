@@ -58,7 +58,7 @@ public class Transfer {
         length = 20
     )
     @Builder.Default
-    private String status = "COMPLETED";
+    private String status = "PENDING";
 
     @CreationTimestamp
     @Column(

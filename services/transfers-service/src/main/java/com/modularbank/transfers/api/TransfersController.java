@@ -38,7 +38,7 @@ public class TransfersController {
                 );
 
             return ResponseEntity
-                .status(HttpStatus.CREATED)
+                .status(HttpStatus.ACCEPTED)
                 .body(transfer);
 
         } catch (ResponseStatusException exception) {
