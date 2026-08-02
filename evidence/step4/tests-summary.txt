@@ -1,0 +1,9 @@
+﻿RESUMEN DE PRUEBAS - PASO 4
+Fecha: 2026-08-02 17:22:51
+
+api-gateway : BUILD SUCCESS
+accounts-service : BUILD SUCCESS
+transfers-service : BUILD SUCCESS
+monolito : BUILD SUCCESS
+
+Pruebas aprobadas: SI

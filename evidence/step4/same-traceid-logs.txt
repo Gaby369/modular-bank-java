@@ -1,0 +1,32 @@
+﻿MISMO TRACEID EN LOGS JSON - EVIDENCIA PASO 4
+TraceId: ddb48bc6e318e70837a4233e8fdef196
+transferId: 01f61b38-3ba1-4aa9-9bcb-504145405136
+correlationId: step4-evidence-20260802-172001
+
+============================================================
+api-gateway
+============================================================
+1) {"@timestamp":"2026-08-02T17:20:05.6585453-04:00","@version":"1","message":"Gateway request completed","logger_name":"com.modularbank.gateway.shared.observability.GatewayRequestLoggingFilter","thread_name":"reactor-http-nio-3","level":"INFO","level_value":20000,"correlationId":"step4-evidence-20260802-172001","event":"gateway_request_completed","method":"POST","path":"/transfers","status":202,"durationMs":1455,"traceId":"ddb48bc6e318e70837a4233e8fdef196","spanId":"2199c4411ff799da","service":"api-gateway"}
+
+============================================================
+accounts-service
+============================================================
+1) {"@timestamp":"2026-08-02T17:20:06.2501994-04:00","@version":"1","message":"Received TransferRequested.v1 transferId=01f61b38-3ba1-4aa9-9bcb-504145405136","logger_name":"com.modularbank.accounts.infrastructure.messaging.TransferRequestedConsumer","thread_name":"org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1","level":"INFO","level_value":20000,"correlationId":"step4-evidence-20260802-172001","traceId":"ddb48bc6e318e70837a4233e8fdef196","spanId":"0504612d7afdb3b5","service":"accounts-service"}
+
+============================================================
+transfers-service
+============================================================
+1) {"@timestamp":"2026-08-02T17:20:05.3687926-04:00","@version":"1","message":"Transfer created transferId=01f61b38-3ba1-4aa9-9bcb-504145405136 status=PENDING","logger_name":"com.modularbank.transfers.application.TransferUseCase","thread_name":"http-nio-8083-exec-10","level":"INFO","level_value":20000,"correlationId":"step4-evidence-20260802-172001","traceId":"ddb48bc6e318e70837a4233e8fdef196","spanId":"277996ec326077a1","service":"transfers-service"}
+2) {"@timestamp":"2026-08-02T17:20:08.4111766-04:00","@version":"1","message":"Received TransferCompleted.v1 transferId=01f61b38-3ba1-4aa9-9bcb-504145405136","logger_name":"com.modularbank.transfers.infrastructure.messaging.TransferResultConsumer","thread_name":"org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1","level":"INFO","level_value":20000,"correlationId":"step4-evidence-20260802-172001","traceId":"ddb48bc6e318e70837a4233e8fdef196","spanId":"578805e961c0247c","service":"transfers-service"}
+
+============================================================
+modular-monolith
+============================================================
+1) {"@timestamp":"2026-08-02T17:20:06.133176-04:00","@version":"1","message":"Received TransferRequested.v1 transferId=01f61b38-3ba1-4aa9-9bcb-504145405136","logger_name":"com.modularbank.modules.notifications.infrastructure.messaging.TransferRequestedNotificationListener","thread_name":"org.springframework.amqp.rabbit.RabbitListenerEndpointContainer#0-1","level":"INFO","level_value":20000,"correlationId":"step4-evidence-20260802-172001","traceId":"ddb48bc6e318e70837a4233e8fdef196","spanId":"ea14ba619dab8189","service":"modular-monolith"}
+
+RESUMEN
+api-gateway:       SI
+accounts-service:  SI
+transfers-service: SI
+modular-monolith:  SI
+Mismo TraceId en los cuatro logs: SI

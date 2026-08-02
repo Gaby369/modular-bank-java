@@ -1,0 +1,13 @@
+﻿EVIDENCIA DE COLAS RABBITMQ - PASO 4
+Fecha: 2026-08-02 17:22:51
+
+Timeout: 60.0 seconds ...
+Listing queues for vhost / ...
+name	messages_ready	messages_unacknowledged	consumers
+transfer.completed.queue	0	0	1
+transfer.requested.queue	0	0	1
+transfer.requested.dlq	0	0	0
+transfer.failed.queue	0	0	1
+transfer.failed.dlq	0	0	0
+transfer.completed.dlq	0	0	0
+notifications.transfer.requested.queue	0	0	1

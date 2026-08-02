@@ -10,6 +10,8 @@ import com.modularbank.accounts.infrastructure.outbox.OutboxEvent;
 import com.modularbank.accounts.infrastructure.outbox.OutboxEventRepository;
 import com.modularbank.accounts.infrastructure.outbox.OutboxStatus;
 import com.modularbank.accounts.shared.domain.Money;
+import com.modularbank.accounts.shared.observability.TraceContextStore;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -42,13 +44,27 @@ class TransferRequestedProcessorTest {
         new ObjectMapper()
             .registerModule(new JavaTimeModule());
 
+    private final TraceContextStore traceContextStore =
+        mock(TraceContextStore.class);
+
     private final TransferRequestedProcessor processor =
         new TransferRequestedProcessor(
             accountsService,
             processedEventRepository,
             outboxEventRepository,
-            objectMapper
+            objectMapper,
+            traceContextStore
         );
+
+    @BeforeEach
+    void setUpTraceContext() {
+        when(traceContextStore.capture()).thenReturn(
+            new TraceContextStore.StoredTraceContext(
+                null,
+                null
+            )
+        );
+    }
 
     @Test
     void shouldProcessNewTransferAndCreateCompletedEvent() {

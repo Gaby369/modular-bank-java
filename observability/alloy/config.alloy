@@ -1,0 +1,43 @@
+logging {
+  level  = "info"
+  format = "logfmt"
+}
+
+local.file_match "finbank" {
+  path_targets = [{
+    "__path__" = "/var/log/finbank/*.json",
+    "job"      = "finbank",
+  }]
+  sync_period = "5s"
+}
+
+loki.source.file "finbank" {
+  targets    = local.file_match.finbank.targets
+  forward_to = [loki.process.finbank.receiver]
+}
+
+loki.process "finbank" {
+  stage.json {
+    expressions = {
+      service = "service",
+      level   = "level",
+      traceId = "traceId",
+      spanId  = "spanId",
+    }
+  }
+
+  stage.labels {
+    values = {
+      service = "",
+      level   = "",
+    }
+  }
+
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

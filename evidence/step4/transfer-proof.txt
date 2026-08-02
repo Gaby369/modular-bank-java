@@ -1,0 +1,15 @@
+﻿EVIDENCIA DE TRANSFERENCIA - PASO 4
+Fecha: 2026-08-02 17:22:51
+
+Referencia:        step4-evidence-20260802-172001
+TransferId:        01f61b38-3ba1-4aa9-9bcb-504145405136
+Cuenta origen:      aaa636f0-d838-40c3-8d14-9f4c4e9fae22 (saldo antes: 2.0000)
+Cuenta destino:      cd9245bd-c5c0-4ab3-91ed-76abf1bea66e (saldo antes: 1.0000)
+Monto:              1.00
+Estado inicial:      PENDING
+Estado final:        COMPLETED
+correlationId:       step4-evidence-20260802-172001
+TraceId:             ddb48bc6e318e70837a4233e8fdef196
+
+Transferencias con esta referencia en la base de datos: 1
+Transferencia duplicada: NO

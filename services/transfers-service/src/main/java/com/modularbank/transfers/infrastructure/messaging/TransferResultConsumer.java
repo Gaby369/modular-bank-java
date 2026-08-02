@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.modularbank.transfers.infrastructure.messaging.events.TransferCompletedEvent;
 import com.modularbank.transfers.infrastructure.messaging.events.TransferFailedEvent;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -20,6 +22,9 @@ import static com.modularbank.transfers.infrastructure.messaging.TransferMessagi
 @Component
 @RequiredArgsConstructor
 public class TransferResultConsumer {
+
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(TransferResultConsumer.class);
 
     private static final String CORRELATION_HEADER =
         "X-Correlation-Id";
@@ -50,6 +55,11 @@ public class TransferResultConsumer {
                     TransferCompletedEvent.class
                 );
 
+            LOGGER.info(
+                "Received TransferCompleted.v1 transferId={}",
+                event.transferId()
+            );
+
             processor.markCompleted(event);
 
         } finally {
@@ -73,6 +83,11 @@ public class TransferResultConsumer {
                     message,
                     TransferFailedEvent.class
                 );
+
+            LOGGER.info(
+                "Received TransferFailed.v1 transferId={}",
+                event.transferId()
+            );
 
             processor.markFailed(event);
 

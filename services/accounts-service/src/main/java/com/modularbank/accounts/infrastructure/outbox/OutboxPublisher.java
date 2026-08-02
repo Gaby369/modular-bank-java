@@ -1,5 +1,7 @@
 package com.modularbank.accounts.infrastructure.outbox;
 
+import com.modularbank.accounts.shared.observability.TraceContextStore;
+import io.opentelemetry.context.Scope;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageDeliveryMode;
@@ -26,6 +28,7 @@ public class OutboxPublisher {
 
     private final OutboxEventRepository outboxEventRepository;
     private final RabbitTemplate rabbitTemplate;
+    private final TraceContextStore traceContextStore;
 
     @Scheduled(
         fixedDelayString =
@@ -46,11 +49,18 @@ public class OutboxPublisher {
 
     private void publish(OutboxEvent event) {
         try {
-            rabbitTemplate.send(
-                EXCHANGE,
-                event.getRoutingKey(),
-                createMessage(event)
-            );
+            try (
+                Scope ignored = traceContextStore.restore(
+                    event.getTraceparent(),
+                    event.getTracestate()
+                )
+            ) {
+                rabbitTemplate.send(
+                    EXCHANGE,
+                    event.getRoutingKey(),
+                    createMessage(event)
+                );
+            }
 
             event.markPublished();
             outboxEventRepository.save(event);

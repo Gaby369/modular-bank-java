@@ -8,6 +8,7 @@ import com.modularbank.accounts.infrastructure.messaging.idempotency.ProcessedEv
 import com.modularbank.accounts.infrastructure.messaging.idempotency.ProcessedEventRepository;
 import com.modularbank.accounts.infrastructure.outbox.OutboxEvent;
 import com.modularbank.accounts.infrastructure.outbox.OutboxEventRepository;
+import com.modularbank.accounts.shared.observability.TraceContextStore;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,7 @@ public class TransferFailureRecorder {
     private final ProcessedEventRepository processedEventRepository;
     private final OutboxEventRepository outboxEventRepository;
     private final ObjectMapper objectMapper;
+    private final TraceContextStore traceContextStore;
 
     @Transactional
     public void recordFailure(
@@ -80,6 +82,9 @@ public class TransferFailureRecorder {
                 TransferFailedEvent.CURRENT_VERSION
             );
 
+        TraceContextStore.StoredTraceContext traceContext =
+            traceContextStore.capture();
+
         outboxEventRepository.save(
             OutboxEvent.pending(
                 failedEventId,
@@ -88,6 +93,8 @@ public class TransferFailureRecorder {
                 FAILED_EVENT_TYPE,
                 FAILED_ROUTING_KEY,
                 correlationId,
+                traceContext.traceparent(),
+                traceContext.tracestate(),
                 serialize(failedEvent)
             )
         );

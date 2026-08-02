@@ -1,0 +1,16 @@
+﻿EVIDENCIA DE NOTIFICACION TRANSFER_SENT - PASO 4
+Fecha: 2026-08-02 17:22:51
+
+Consulta ejecutada:
+SELECT id, user_id, type, payload, created_at
+FROM notifications.notifications
+WHERE payload->>'transferId' = '01f61b38-3ba1-4aa9-9bcb-504145405136';
+
+Resultado:
+                  id                  |               user_id                |     type      |                                                                                                                  payload                                                                                                                   |          created_at           
+--------------------------------------+--------------------------------------+---------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------
+ 855729cf-d536-4434-8d2f-6db9c1d314bf | ece6cdef-0b97-4bd1-be18-289912dfbcc8 | TRANSFER_SENT | {"amount": "1", "reference": "step4-evidence-20260802-172001", "transferId": "01f61b38-3ba1-4aa9-9bcb-504145405136", "sourceAccountId": "aaa636f0-d838-40c3-8d14-9f4c4e9fae22", "targetAccountId": "cd9245bd-c5c0-4ab3-91ed-76abf1bea66e"} | 2026-08-02 21:20:06.381124+00
+(1 row)
+
+
+Notificacion TRANSFER_SENT persistida: SI

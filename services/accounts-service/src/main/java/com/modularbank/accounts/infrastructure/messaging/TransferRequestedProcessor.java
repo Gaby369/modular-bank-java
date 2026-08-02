@@ -9,6 +9,7 @@ import com.modularbank.accounts.infrastructure.messaging.idempotency.ProcessedEv
 import com.modularbank.accounts.infrastructure.messaging.idempotency.ProcessedEventRepository;
 import com.modularbank.accounts.infrastructure.outbox.OutboxEvent;
 import com.modularbank.accounts.infrastructure.outbox.OutboxEventRepository;
+import com.modularbank.accounts.shared.observability.TraceContextStore;
 import com.modularbank.accounts.shared.domain.Money;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class TransferRequestedProcessor {
     private final ProcessedEventRepository processedEventRepository;
     private final OutboxEventRepository outboxEventRepository;
     private final ObjectMapper objectMapper;
+    private final TraceContextStore traceContextStore;
 
     @Transactional
     public void process(TransferRequestedEvent event) {
@@ -72,6 +74,9 @@ public class TransferRequestedProcessor {
                 TransferCompletedEvent.CURRENT_VERSION
             );
 
+        TraceContextStore.StoredTraceContext traceContext =
+            traceContextStore.capture();
+
         OutboxEvent outboxEvent =
             OutboxEvent.pending(
                 completedEventId,
@@ -80,6 +85,8 @@ public class TransferRequestedProcessor {
                 COMPLETED_EVENT_TYPE,
                 COMPLETED_ROUTING_KEY,
                 correlationId,
+                traceContext.traceparent(),
+                traceContext.tracestate(),
                 serialize(completedEvent)
             );
 

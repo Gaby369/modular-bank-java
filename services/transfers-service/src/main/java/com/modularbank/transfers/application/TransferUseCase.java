@@ -10,7 +10,10 @@ import com.modularbank.transfers.infrastructure.messaging.TransferMessagingConst
 import com.modularbank.transfers.infrastructure.messaging.events.TransferRequestedEvent;
 import com.modularbank.transfers.infrastructure.outbox.OutboxEvent;
 import com.modularbank.transfers.infrastructure.outbox.OutboxEventRepository;
+import com.modularbank.transfers.shared.observability.TraceContextStore;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -30,10 +33,14 @@ public class TransferUseCase {
     private static final String CORRELATION_ID_KEY =
         "correlationId";
 
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(TransferUseCase.class);
+
     private final TransferRepository transferRepository;
     private final AccountsClient accountsClient;
     private final OutboxEventRepository outboxEventRepository;
     private final ObjectMapper objectMapper;
+    private final TraceContextStore traceContextStore;
 
     @Transactional
     public Transfer execute(
@@ -88,6 +95,9 @@ public class TransferUseCase {
                 TransferRequestedEvent.CURRENT_VERSION
             );
 
+        TraceContextStore.StoredTraceContext traceContext =
+            traceContextStore.capture();
+
         OutboxEvent outboxEvent =
             OutboxEvent.pending(
                 eventId,
@@ -96,10 +106,17 @@ public class TransferUseCase {
                 EVENT_TYPE,
                 TransferMessagingConstants.REQUESTED_ROUTING_KEY,
                 MDC.get(CORRELATION_ID_KEY),
+                traceContext.traceparent(),
+                traceContext.tracestate(),
                 serializeEvent(event)
             );
 
         outboxEventRepository.save(outboxEvent);
+
+        LOGGER.info(
+            "Transfer created transferId={} status=PENDING",
+            transfer.getId()
+        );
 
         return transfer;
     }

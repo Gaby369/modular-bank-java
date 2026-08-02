@@ -35,6 +35,12 @@ public class OutboxEvent {
     @Column(name = "correlation_id", length = 100)
     private String correlationId;
 
+    @Column(name = "traceparent", length = 255)
+    private String traceparent;
+
+    @Column(name = "tracestate", length = 512)
+    private String tracestate;
+
     @Column(nullable = false, columnDefinition = "TEXT")
     private String payload;
 
@@ -64,6 +70,8 @@ public class OutboxEvent {
         String eventType,
         String routingKey,
         String correlationId,
+        String traceparent,
+        String tracestate,
         String payload
     ) {
         this.id = id;
@@ -72,6 +80,8 @@ public class OutboxEvent {
         this.eventType = eventType;
         this.routingKey = routingKey;
         this.correlationId = correlationId;
+        this.traceparent = traceparent;
+        this.tracestate = tracestate;
         this.payload = payload;
         this.status = OutboxStatus.PENDING;
         this.attempts = 0;
@@ -93,6 +103,8 @@ public class OutboxEvent {
             eventType,
             routingKey,
             null,
+            null,
+            null,
             payload
         );
     }
@@ -106,6 +118,30 @@ public class OutboxEvent {
         String correlationId,
         String payload
     ) {
+        return pending(
+            eventId,
+            aggregateType,
+            aggregateId,
+            eventType,
+            routingKey,
+            correlationId,
+            null,
+            null,
+            payload
+        );
+    }
+
+    public static OutboxEvent pending(
+        UUID eventId,
+        String aggregateType,
+        UUID aggregateId,
+        String eventType,
+        String routingKey,
+        String correlationId,
+        String traceparent,
+        String tracestate,
+        String payload
+    ) {
         return new OutboxEvent(
             eventId,
             aggregateType,
@@ -113,6 +149,8 @@ public class OutboxEvent {
             eventType,
             routingKey,
             correlationId,
+            traceparent,
+            tracestate,
             payload
         );
     }
@@ -157,6 +195,14 @@ public class OutboxEvent {
 
     public String getCorrelationId() {
         return correlationId;
+    }
+
+    public String getTraceparent() {
+        return traceparent;
+    }
+
+    public String getTracestate() {
+        return tracestate;
     }
 
     public String getPayload() {

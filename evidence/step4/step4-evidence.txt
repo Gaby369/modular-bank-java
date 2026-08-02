@@ -1,0 +1,31 @@
+﻿EVIDENCIA FINAL PASO 4 - TRAZA DISTRIBUIDA COMPLETA
+Fecha: 2026-08-02 17:22:51
+Referencia: step4-evidence-20260802-172001
+
+TransferId: 01f61b38-3ba1-4aa9-9bcb-504145405136
+TraceId: ddb48bc6e318e70837a4233e8fdef196
+CorrelationId: step4-evidence-20260802-172001
+Estado final: COMPLETED
+Transferencia duplicada: NO
+
+Cuenta origen: aaa636f0-d838-40c3-8d14-9f4c4e9fae22
+Cuenta destino: cd9245bd-c5c0-4ab3-91ed-76abf1bea66e
+Monto: 1.00
+
+Servicios en la traza de Jaeger: transfers-service, modular-monolith, api-gateway, accounts-service
+
+RESUMEN
+- Transferencia COMPLETED: SI
+- Duplicado por timeout o reintento: NO
+- API Gateway en Jaeger: SI
+- Transfers Service en Jaeger: SI
+- Accounts Service en Jaeger: SI
+- Monolito en Jaeger: SI
+- RabbitMQ send/receive en Jaeger: SI
+- TraceId en api-gateway.json: SI
+- TraceId en accounts-service.json: SI
+- TraceId en transfers-service.json: SI
+- TraceId en modular-monolith.json: SI
+- Mismo TraceId en los cuatro logs: SI
+- Notificacion TRANSFER_SENT persistida: SI
+- Pruebas aprobadas: SI

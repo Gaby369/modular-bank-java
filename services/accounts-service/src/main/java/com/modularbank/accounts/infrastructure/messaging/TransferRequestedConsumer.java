@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.modularbank.accounts.infrastructure.messaging.events.TransferRequestedEvent;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -19,6 +21,9 @@ import static com.modularbank.accounts.infrastructure.messaging.TransferMessagin
 @Component
 @RequiredArgsConstructor
 public class TransferRequestedConsumer {
+
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(TransferRequestedConsumer.class);
 
     private static final String CORRELATION_HEADER =
         "X-Correlation-Id";
@@ -46,6 +51,11 @@ public class TransferRequestedConsumer {
         try {
             TransferRequestedEvent event =
                 deserialize(message);
+
+            LOGGER.info(
+                "Received TransferRequested.v1 transferId={}",
+                event.transferId()
+            );
 
             try {
                 processor.process(

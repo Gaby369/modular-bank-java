@@ -9,6 +9,8 @@ import com.modularbank.transfers.infrastructure.TransferRepository;
 import com.modularbank.transfers.infrastructure.outbox.OutboxEvent;
 import com.modularbank.transfers.infrastructure.outbox.OutboxEventRepository;
 import com.modularbank.transfers.infrastructure.outbox.OutboxStatus;
+import com.modularbank.transfers.shared.observability.TraceContextStore;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.web.server.ResponseStatusException;
@@ -41,13 +43,27 @@ class TransferUseCaseTest {
         new ObjectMapper()
             .registerModule(new JavaTimeModule());
 
+    private final TraceContextStore traceContextStore =
+        mock(TraceContextStore.class);
+
     private final TransferUseCase transferUseCase =
         new TransferUseCase(
             transferRepository,
             accountsClient,
             outboxEventRepository,
-            objectMapper
+            objectMapper,
+            traceContextStore
         );
+
+    @BeforeEach
+    void setUpTraceContext() {
+        when(traceContextStore.capture()).thenReturn(
+            new TraceContextStore.StoredTraceContext(
+                null,
+                null
+            )
+        );
+    }
 
     @Test
     void shouldCreatePendingTransferAndPendingOutboxEvent() {

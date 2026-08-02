@@ -52,10 +52,6 @@ management:
     tags:
       application: transfers-service
 
-logging:
-  pattern:
-    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] [correlationId=%X{correlationId:-none}] %logger{36} - %msg%n"
-
 resilience4j:
   circuitbreaker:
     instances:
