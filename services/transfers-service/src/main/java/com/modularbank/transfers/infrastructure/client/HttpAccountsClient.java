@@ -1,9 +1,15 @@
 package com.modularbank.transfers.infrastructure.client;
 
 import com.modularbank.transfers.application.ports.AccountsClient;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
@@ -18,20 +24,55 @@ import java.util.function.Supplier;
 @Component
 public class HttpAccountsClient implements AccountsClient {
 
+    private static final Logger LOGGER =
+        LoggerFactory.getLogger(HttpAccountsClient.class);
+
+    private static final String CIRCUIT_BREAKER_NAME =
+        "accountsService";
+
     private final RestClient restClient;
+    private final CircuitBreaker circuitBreaker;
 
     public HttpAccountsClient(
         RestClient.Builder builder,
-        @Value("${accounts.service.base-url}") String baseUrl,
-        @Value("${accounts.service.internal-api-key}") String apiKey
+        CircuitBreakerRegistry circuitBreakerRegistry,
+        @Value("${accounts.service.base-url}")
+        String baseUrl,
+        @Value("${accounts.service.internal-api-key}")
+        String apiKey,
+        @Value("${accounts.service.connect-timeout-ms:2000}")
+        int connectTimeoutMs,
+        @Value("${accounts.service.read-timeout-ms:3000}")
+        int readTimeoutMs
     ) {
+        SimpleClientHttpRequestFactory requestFactory =
+            new SimpleClientHttpRequestFactory();
+
+        requestFactory.setConnectTimeout(connectTimeoutMs);
+        requestFactory.setReadTimeout(readTimeoutMs);
+
         this.restClient = builder
+            .requestFactory(requestFactory)
             .baseUrl(baseUrl)
             .defaultHeader(
                 "X-Internal-Api-Key",
                 apiKey
             )
             .build();
+
+        this.circuitBreaker =
+            circuitBreakerRegistry.circuitBreaker(
+                CIRCUIT_BREAKER_NAME
+            );
+
+        this.circuitBreaker
+            .getEventPublisher()
+            .onStateTransition(event ->
+                LOGGER.warn(
+                    "Accounts Service circuit breaker transition={}",
+                    event.getStateTransition()
+                )
+            );
     }
 
     @Override
@@ -88,10 +129,38 @@ public class HttpAccountsClient implements AccountsClient {
     }
 
     private <T> T execute(Supplier<T> operation) {
+        Supplier<T> protectedOperation =
+            CircuitBreaker.decorateSupplier(
+                circuitBreaker,
+                () -> invoke(operation)
+            );
+
+        try {
+            return protectedOperation.get();
+
+        } catch (CallNotPermittedException exception) {
+            throw unavailable(
+                "Accounts Service circuit breaker is OPEN",
+                exception
+            );
+
+        } catch (
+            AccountsServiceUnavailableException exception
+        ) {
+            throw unavailable(
+                "Accounts Service is unavailable",
+                exception
+            );
+        }
+    }
+
+    private <T> T invoke(Supplier<T> operation) {
         try {
             return operation.get();
 
-        } catch (RestClientResponseException exception) {
+        } catch (
+            RestClientResponseException exception
+        ) {
             throw new ResponseStatusException(
                 exception.getStatusCode(),
                 exception.getResponseBodyAsString(),
@@ -99,12 +168,22 @@ public class HttpAccountsClient implements AccountsClient {
             );
 
         } catch (ResourceAccessException exception) {
-            throw new ResponseStatusException(
-                HttpStatus.SERVICE_UNAVAILABLE,
-                "Accounts Service is unavailable",
+            throw new AccountsServiceUnavailableException(
+                "Could not connect to Accounts Service",
                 exception
             );
         }
+    }
+
+    private ResponseStatusException unavailable(
+        String message,
+        RuntimeException cause
+    ) {
+        return new ResponseStatusException(
+            HttpStatus.SERVICE_UNAVAILABLE,
+            message,
+            cause
+        );
     }
 
     private record AccountSummary(
