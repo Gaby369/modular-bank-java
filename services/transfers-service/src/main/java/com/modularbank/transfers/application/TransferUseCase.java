@@ -11,6 +11,7 @@ import com.modularbank.transfers.infrastructure.messaging.events.TransferRequest
 import com.modularbank.transfers.infrastructure.outbox.OutboxEvent;
 import com.modularbank.transfers.infrastructure.outbox.OutboxEventRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,8 @@ public class TransferUseCase {
 
     private static final String AGGREGATE_TYPE = "Transfer";
     private static final String EVENT_TYPE = "TransferRequested.v1";
+    private static final String CORRELATION_ID_KEY =
+        "correlationId";
 
     private final TransferRepository transferRepository;
     private final AccountsClient accountsClient;
@@ -37,9 +40,10 @@ public class TransferUseCase {
         UUID userId,
         TransferRequest request
     ) {
-        if (request.sourceAccountId()
-            .equals(request.targetAccountId())) {
-
+        if (
+            request.sourceAccountId()
+                .equals(request.targetAccountId())
+        ) {
             throw new ResponseStatusException(
                 HttpStatus.UNPROCESSABLE_ENTITY,
                 "Source and target accounts must be different"
@@ -84,8 +88,6 @@ public class TransferUseCase {
                 TransferRequestedEvent.CURRENT_VERSION
             );
 
-        String payload = serializeEvent(event);
-
         OutboxEvent outboxEvent =
             OutboxEvent.pending(
                 eventId,
@@ -93,7 +95,8 @@ public class TransferUseCase {
                 transfer.getId(),
                 EVENT_TYPE,
                 TransferMessagingConstants.REQUESTED_ROUTING_KEY,
-                payload
+                MDC.get(CORRELATION_ID_KEY),
+                serializeEvent(event)
             );
 
         outboxEventRepository.save(outboxEvent);

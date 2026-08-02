@@ -21,12 +21,17 @@ public class OutboxPublisher {
 
     private static final int MAXIMUM_ATTEMPTS = 5;
 
+    private static final String CORRELATION_HEADER =
+        "X-Correlation-Id";
+
     private final OutboxEventRepository outboxEventRepository;
     private final RabbitTemplate rabbitTemplate;
 
     @Scheduled(
-        fixedDelayString = "${outbox.publisher.fixed-delay-ms:1000}",
-        initialDelayString = "${outbox.publisher.initial-delay-ms:2000}"
+        fixedDelayString =
+            "${outbox.publisher.fixed-delay-ms:1000}",
+        initialDelayString =
+            "${outbox.publisher.initial-delay-ms:2000}"
     )
     @Transactional
     public void publishPendingEvents() {
@@ -41,12 +46,10 @@ public class OutboxPublisher {
 
     private void publish(OutboxEvent event) {
         try {
-            Message message = createMessage(event);
-
             rabbitTemplate.send(
                 EXCHANGE,
                 event.getRoutingKey(),
-                message
+                createMessage(event)
             );
 
             event.markPublished();
@@ -101,17 +104,32 @@ public class OutboxPublisher {
             event.getEventType()
         );
 
+        if (
+            event.getCorrelationId() != null
+                && !event.getCorrelationId().isBlank()
+        ) {
+            properties.setHeader(
+                CORRELATION_HEADER,
+                event.getCorrelationId()
+            );
+        }
+
         return new Message(
-            event.getPayload().getBytes(StandardCharsets.UTF_8),
+            event.getPayload()
+                .getBytes(StandardCharsets.UTF_8),
             properties
         );
     }
 
-    private String errorMessage(RuntimeException exception) {
+    private String errorMessage(
+        RuntimeException exception
+    ) {
         if (exception.getMessage() != null) {
             return exception.getMessage();
         }
 
-        return exception.getClass().getSimpleName();
+        return exception
+            .getClass()
+            .getSimpleName();
     }
 }

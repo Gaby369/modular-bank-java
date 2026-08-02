@@ -36,7 +36,21 @@ public class TransferRequestedProcessor {
 
     @Transactional
     public void process(TransferRequestedEvent event) {
+        processInternal(event, null);
+    }
 
+    @Transactional
+    public void process(
+        TransferRequestedEvent event,
+        String correlationId
+    ) {
+        processInternal(event, correlationId);
+    }
+
+    private void processInternal(
+        TransferRequestedEvent event,
+        String correlationId
+    ) {
         if (processedEventRepository.existsById(event.eventId())) {
             return;
         }
@@ -65,6 +79,7 @@ public class TransferRequestedProcessor {
                 event.transferId(),
                 COMPLETED_EVENT_TYPE,
                 COMPLETED_ROUTING_KEY,
+                correlationId,
                 serialize(completedEvent)
             );
 

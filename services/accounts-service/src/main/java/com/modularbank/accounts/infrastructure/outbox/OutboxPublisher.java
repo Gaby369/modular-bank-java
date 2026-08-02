@@ -21,6 +21,9 @@ public class OutboxPublisher {
 
     private static final int MAXIMUM_ATTEMPTS = 5;
 
+    private static final String CORRELATION_HEADER =
+        "X-Correlation-Id";
+
     private final OutboxEventRepository outboxEventRepository;
     private final RabbitTemplate rabbitTemplate;
 
@@ -32,7 +35,6 @@ public class OutboxPublisher {
     )
     @Transactional
     public void publishPendingEvents() {
-
         List<OutboxEvent> events =
             outboxEventRepository
                 .findTop50ByStatusOrderByCreatedAtAsc(PENDING);
@@ -44,12 +46,10 @@ public class OutboxPublisher {
 
     private void publish(OutboxEvent event) {
         try {
-            Message message = createMessage(event);
-
             rabbitTemplate.send(
                 EXCHANGE,
                 event.getRoutingKey(),
-                message
+                createMessage(event)
             );
 
             event.markPublished();
@@ -66,7 +66,6 @@ public class OutboxPublisher {
     }
 
     private Message createMessage(OutboxEvent event) {
-
         MessageProperties properties =
             new MessageProperties();
 
@@ -74,7 +73,9 @@ public class OutboxPublisher {
             event.getId().toString()
         );
 
-        properties.setType(event.getEventType());
+        properties.setType(
+            event.getEventType()
+        );
 
         properties.setContentType(
             MessageProperties.CONTENT_TYPE_JSON
@@ -103,6 +104,16 @@ public class OutboxPublisher {
             event.getEventType()
         );
 
+        if (
+            event.getCorrelationId() != null
+                && !event.getCorrelationId().isBlank()
+        ) {
+            properties.setHeader(
+                CORRELATION_HEADER,
+                event.getCorrelationId()
+            );
+        }
+
         return new Message(
             event.getPayload()
                 .getBytes(StandardCharsets.UTF_8),
@@ -117,6 +128,8 @@ public class OutboxPublisher {
             return exception.getMessage();
         }
 
-        return exception.getClass().getSimpleName();
+        return exception
+            .getClass()
+            .getSimpleName();
     }
 }

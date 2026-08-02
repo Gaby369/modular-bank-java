@@ -11,7 +11,10 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(schema = "transfers", name = "outbox_events")
+@Table(
+    schema = "transfers",
+    name = "outbox_events"
+)
 public class OutboxEvent {
 
     @Id
@@ -28,6 +31,9 @@ public class OutboxEvent {
 
     @Column(name = "routing_key", nullable = false, length = 150)
     private String routingKey;
+
+    @Column(name = "correlation_id", length = 100)
+    private String correlationId;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String payload;
@@ -52,18 +58,20 @@ public class OutboxEvent {
     }
 
     private OutboxEvent(
-            UUID id,
-            String aggregateType,
-            UUID aggregateId,
-            String eventType,
-            String routingKey,
-            String payload) {
-
+        UUID id,
+        String aggregateType,
+        UUID aggregateId,
+        String eventType,
+        String routingKey,
+        String correlationId,
+        String payload
+    ) {
         this.id = id;
         this.aggregateType = aggregateType;
         this.aggregateId = aggregateId;
         this.eventType = eventType;
         this.routingKey = routingKey;
+        this.correlationId = correlationId;
         this.payload = payload;
         this.status = OutboxStatus.PENDING;
         this.attempts = 0;
@@ -71,20 +79,42 @@ public class OutboxEvent {
     }
 
     public static OutboxEvent pending(
-            UUID eventId,
-            String aggregateType,
-            UUID aggregateId,
-            String eventType,
-            String routingKey,
-            String payload) {
+        UUID eventId,
+        String aggregateType,
+        UUID aggregateId,
+        String eventType,
+        String routingKey,
+        String payload
+    ) {
+        return pending(
+            eventId,
+            aggregateType,
+            aggregateId,
+            eventType,
+            routingKey,
+            null,
+            payload
+        );
+    }
 
+    public static OutboxEvent pending(
+        UUID eventId,
+        String aggregateType,
+        UUID aggregateId,
+        String eventType,
+        String routingKey,
+        String correlationId,
+        String payload
+    ) {
         return new OutboxEvent(
-                eventId,
-                aggregateType,
-                aggregateId,
-                eventType,
-                routingKey,
-                payload);
+            eventId,
+            aggregateType,
+            aggregateId,
+            eventType,
+            routingKey,
+            correlationId,
+            payload
+        );
     }
 
     public void markPublished() {
@@ -93,7 +123,10 @@ public class OutboxEvent {
         this.lastError = null;
     }
 
-    public void registerFailure(String error, int maximumAttempts) {
+    public void registerFailure(
+        String error,
+        int maximumAttempts
+    ) {
         this.attempts++;
         this.lastError = error;
 
@@ -120,6 +153,10 @@ public class OutboxEvent {
 
     public String getRoutingKey() {
         return routingKey;
+    }
+
+    public String getCorrelationId() {
+        return correlationId;
     }
 
     public String getPayload() {

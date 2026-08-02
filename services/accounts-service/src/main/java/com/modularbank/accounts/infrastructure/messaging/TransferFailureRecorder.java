@@ -36,9 +36,36 @@ public class TransferFailureRecorder {
         TransferRequestedEvent requestedEvent,
         String reason
     ) {
-        if (processedEventRepository.existsById(
-            requestedEvent.eventId()
-        )) {
+        recordFailureInternal(
+            requestedEvent,
+            reason,
+            null
+        );
+    }
+
+    @Transactional
+    public void recordFailure(
+        TransferRequestedEvent requestedEvent,
+        String reason,
+        String correlationId
+    ) {
+        recordFailureInternal(
+            requestedEvent,
+            reason,
+            correlationId
+        );
+    }
+
+    private void recordFailureInternal(
+        TransferRequestedEvent requestedEvent,
+        String reason,
+        String correlationId
+    ) {
+        if (
+            processedEventRepository.existsById(
+                requestedEvent.eventId()
+            )
+        ) {
             return;
         }
 
@@ -60,6 +87,7 @@ public class TransferFailureRecorder {
                 requestedEvent.transferId(),
                 FAILED_EVENT_TYPE,
                 FAILED_ROUTING_KEY,
+                correlationId,
                 serialize(failedEvent)
             )
         );
