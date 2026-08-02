@@ -40,3 +40,14 @@ server:
 
 internal:
   api-key: ${INTERNAL_API_KEY:finbank-internal-dev-key}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: never
+  metrics:
+    tags:
+      application: accounts-service

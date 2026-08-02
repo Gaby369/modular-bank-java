@@ -32,7 +32,16 @@ public class SecurityConfig {
                 )
             )
             .authorizeHttpRequests(authorize ->
-                authorize.anyRequest().authenticated()
+                authorize
+                    .requestMatchers(
+                        "/actuator/health",
+                        "/actuator/health/**"
+                    )
+                    .permitAll()
+                    .requestMatchers("/actuator/**")
+                    .authenticated()
+                    .anyRequest()
+                    .authenticated()
             )
             .exceptionHandling(exception ->
                 exception.authenticationEntryPoint(

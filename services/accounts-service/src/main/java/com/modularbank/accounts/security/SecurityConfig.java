@@ -33,21 +33,30 @@ public class SecurityConfig {
                 )
             )
             .authorizeHttpRequests(authorize ->
-                authorize.anyRequest().authenticated()
+                authorize
+                    .requestMatchers(
+                        "/actuator/health",
+                        "/actuator/health/**"
+                    )
+                    .permitAll()
+                    .requestMatchers("/actuator/**")
+                    .authenticated()
+                    .anyRequest()
+                    .authenticated()
             )
             .exceptionHandling(exception ->
                 exception.authenticationEntryPoint(
-                    new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)
+                    new HttpStatusEntryPoint(
+                        HttpStatus.UNAUTHORIZED
+                    )
                 )
             );
 
-        // Primero se registra JwtAuthFilter dentro de la cadena.
         http.addFilterBefore(
             jwtAuthFilter,
             UsernamePasswordAuthenticationFilter.class
         );
 
-        // Después Spring ya puede colocar este filtro antes del JWT.
         http.addFilterBefore(
             internalApiKeyFilter,
             JwtAuthFilter.class
