@@ -21,6 +21,16 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USER:finbank}
     password: ${RABBITMQ_PASSWORD:finbank}
+    dynamic: true
+    listener:
+      simple:
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          initial-interval: 1s
+          max-attempts: 3
+          multiplier: 2
+          max-interval: 5s
 
 jwt:
   secret: ${JWT_SECRET:modular-bank-dev-secret-change-in-production-256bit}

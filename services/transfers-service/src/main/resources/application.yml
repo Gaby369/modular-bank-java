@@ -21,6 +21,15 @@ spring:
     username: ${RABBITMQ_USER:finbank}
     password: ${RABBITMQ_PASSWORD:finbank}
     dynamic: true
+    listener:
+      simple:
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          initial-interval: 1s
+          max-attempts: 3
+          multiplier: 2
+          max-interval: 5s
 
 server:
   port: 8083
