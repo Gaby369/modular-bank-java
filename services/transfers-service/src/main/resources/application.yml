@@ -1,0 +1,75 @@
+spring:
+  application:
+    name: transfers-service
+
+  datasource:
+    url: ${TRANSFERS_DB_URL:jdbc:postgresql://localhost:5434/transfers_db}
+    username: ${TRANSFERS_DB_USER:transfers}
+    password: ${TRANSFERS_DB_PASSWORD:transfers}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  flyway:
+    enabled: true
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:finbank}
+    password: ${RABBITMQ_PASSWORD:finbank}
+    dynamic: true
+    listener:
+      simple:
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          initial-interval: 1s
+          max-attempts: 3
+          multiplier: 2
+          max-interval: 5s
+
+server:
+  port: 8083
+
+accounts:
+  service:
+    base-url: ${ACCOUNTS_SERVICE_URL:http://localhost:8081}
+    internal-api-key: ${INTERNAL_API_KEY:finbank-internal-dev-key}
+jwt:
+  secret: ${JWT_SECRET:modular-bank-dev-secret-change-in-production-256bit}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,circuitbreakers,circuitbreakerevents
+  endpoint:
+    health:
+      show-details: never
+  metrics:
+    tags:
+      application: transfers-service
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] [correlationId=%X{correlationId:-none}] %logger{36} - %msg%n"
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      accountsService:
+        registerHealthIndicator: false
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 5
+        minimumNumberOfCalls: 3
+        failureRateThreshold: 50
+        permittedNumberOfCallsInHalfOpenState: 2
+        waitDurationInOpenState: 10s
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        eventConsumerBufferSize: 20
+        recordExceptions:
+          - com.modularbank.transfers.infrastructure.client.AccountsServiceUnavailableException
+        ignoreExceptions:
+          - org.springframework.web.server.ResponseStatusException

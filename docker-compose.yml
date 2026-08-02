@@ -1,4 +1,22 @@
 services:
+  transfers-postgres:
+    image: postgres:16
+    container_name: transfers-postgres
+    environment:
+      POSTGRES_DB: transfers_db
+      POSTGRES_USER: transfers
+      POSTGRES_PASSWORD: transfers
+    ports:
+      - "5434:5432"
+    volumes:
+      - transfers_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U transfers -d transfers_db
+      interval: 5s
+      timeout: 5s
+      retries: 10
   postgres:
     image: postgres:16
     environment:
@@ -14,6 +32,45 @@ services:
       retries: 5
     volumes:
       - postgres_data:/var/lib/postgresql/data
+  accounts-postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: accounts_db
+      POSTGRES_USER: accounts
+      POSTGRES_PASSWORD: accounts
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U accounts -d accounts_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - accounts_postgres_data:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:4.2-management
+    container_name: modular-bank-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: finbank
+      RABBITMQ_DEFAULT_PASS: finbank
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test:
+        - CMD
+        - rabbitmq-diagnostics
+        - -q
+        - ping
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
 volumes:
   postgres_data:
+  accounts_postgres_data:
+  transfers_postgres_data:
+  rabbitmq_data:

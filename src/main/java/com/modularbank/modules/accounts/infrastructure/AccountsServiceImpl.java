@@ -12,8 +12,14 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 @Service
+@ConditionalOnProperty(
+    name = "accounts.client.mode",
+    havingValue = "local",
+    matchIfMissing = true
+)
 @RequiredArgsConstructor
 public class AccountsServiceImpl implements AccountsService {
 
@@ -59,6 +65,63 @@ public class AccountsServiceImpl implements AccountsService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found");
         }
     }
+
+
+@Override
+@Transactional
+public void transfer(
+    UUID sourceAccountId,
+    UUID targetAccountId,
+    Money amount,
+    String reference
+) {
+    if (sourceAccountId.equals(targetAccountId)) {
+        throw new ResponseStatusException(
+            HttpStatus.UNPROCESSABLE_ENTITY,
+            "Source and target accounts must be different"
+        );
+    }
+
+    if (!accountRepository.existsById(sourceAccountId)) {
+        throw new ResponseStatusException(
+            HttpStatus.NOT_FOUND,
+            "Source account not found"
+        );
+    }
+
+    if (!accountRepository.existsById(targetAccountId)) {
+        throw new ResponseStatusException(
+            HttpStatus.NOT_FOUND,
+            "Target account not found"
+        );
+    }
+
+    int debited = accountRepository.debitIfSufficient(
+        sourceAccountId,
+        amount.amount()
+    );
+
+    if (debited == 0) {
+        throw new ResponseStatusException(
+            HttpStatus.UNPROCESSABLE_ENTITY,
+            "Insufficient funds"
+        );
+    }
+
+    int credited = accountRepository.credit(
+        targetAccountId,
+        amount.amount()
+    );
+
+    if (credited == 0) {
+        throw new ResponseStatusException(
+            HttpStatus.NOT_FOUND,
+            "Target account not found"
+        );
+    }
+}
+
+
 
     @Override
     @Transactional(readOnly = true)
